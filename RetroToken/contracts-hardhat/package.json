@@ -1,0 +1,43 @@
+{
+  "name": "retro-token-dapp",
+  "version": "1.0.0",
+  "description": "A retro-themed ERC20 token DApp",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile && npm run update-frontend",
+    "test": "hardhat test",
+    "deploy:local": "hardhat ignition deploy ignition/modules/RetroTokenModule.ts --network localhost && npm run update-frontend",
+    "deploy:sepolia": "hardhat ignition deploy ignition/modules/RetroTokenModule.ts --network sepolia && npm run update-frontend",
+    "update-frontend": "hardhat run scripts/updateFrontend.ts",
+    "node": "hardhat node",
+    "frontend": "cd ../frontend && npm run dev",
+    "dev": "concurrently \"npm run node\" \"npm run deploy:local\" \"npm run frontend\"",
+    "verify": "hardhat verify --network sepolia"
+  },
+  "keywords": [
+    "ethereum",
+    "dapp",
+    "erc20",
+    "hardhat",
+    "solidity",
+    "nextjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^0.15.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.13",
+    "@openzeppelin/contracts": "^5.3.0",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.19",
+    "chai": "^4.4.1",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.5.0",
+    "hardhat": "^2.23.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
