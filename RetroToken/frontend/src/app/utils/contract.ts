@@ -1,5 +1,7 @@
-// The ABI will be automatically copied from our updateFrontend script
+import contractAbi from '../abis/RetroToken.json';
+
 export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+export const CONTRACT_ABI = contractAbi;
 
 export type Transaction = {
   type: 'mint' | 'burn' | 'transfer';
@@ -14,8 +16,9 @@ export function getExplorerUrl(hash: string): string {
   
   if (chainId === '11155111') {
     return `https://sepolia.etherscan.io/tx/${hash}`;
+  } else if (chainId === '31337') {
+    return `#`;
   }
   
-  // For local development
-  return `#`;
+  return `https://etherscan.io/tx/${hash}`;
 }
