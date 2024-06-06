@@ -2,7 +2,7 @@
 'use client';
 
 import { WagmiProvider, createConfig, http } from 'wagmi';
-import { sepolia, hardhat, type Chain } from 'wagmi/chains';
+import { sepolia, hardhat } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
