@@ -30,6 +30,9 @@ const config: HardhatUserConfig = {
     sources: "./contracts",
     tests: "./test",
   },
+  sourcify: {
+    enabled: true
+  },
 };
 
 export default config;
