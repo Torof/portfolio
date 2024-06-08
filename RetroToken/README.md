@@ -2,6 +2,8 @@
 
 A retro-styled decentralized application for interacting with the RetroToken ERC20 contract. This DApp allows users to mint, burn, and transfer tokens with a vibrant retro-themed user interface.
 
+![RetroToken Interface](./frontend/public/retrotoken.png)
+
 ## Overview
 
 RetroToken is a simple ERC20 token implementation with no maximum supply. The DApp provides an intuitive interface for:
@@ -145,12 +147,12 @@ npx hardhat node
 npx hardhat ignition deploy ./ignition/modules/RetroTokenModule.ts
 ```
 
-### Technologies Used
+## Technologies Used
 
 __Smart Contract__: Solidity, Hardhat, OpenZeppelin
 __Frontend__: Next.js, TypeScript, Tailwind CSS
 __Web3 Integration__: wagmi, viem, RainbowKit
 __Development__: Hardhat Ignition for deployment
 
-### License
+## License
 MIT
