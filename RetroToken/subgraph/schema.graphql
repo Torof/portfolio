@@ -1,0 +1,35 @@
+type TokensMinted @entity(immutable: true) {
+  id: Bytes!
+  to: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokensBurned @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes! # address
+  to: Bytes! # address
+  value: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type User @entity {
+  id: Bytes! # address
+  mintEvents: [TokensMinted!]! @derivedFrom(field: "to")
+  burnEvents: [TokensBurned!]! @derivedFrom(field: "from")
+  transferFromEvents: [Transfer!]! @derivedFrom(field: "from")
+  transferToEvents: [Transfer!]! @derivedFrom(field: "to")
+}
