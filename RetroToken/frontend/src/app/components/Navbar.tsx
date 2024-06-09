@@ -49,9 +49,14 @@ export default function Navbar() {
 
                   return (
                     <div className="flex flex-col items-end">
-                      <p className="mb-2 text-sm text-retroYellow">
-                        {account.displayName}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm text-retroYellow">
+                          {account.displayName}
+                        </span>
+                        <span className="text-xs px-2 py-1 bg-retroPurple/30 rounded-md text-retroGreen">
+                          {chain.name}
+                        </span>
+                      </div>
                       <button onClick={openAccountModal} className="retro-button">
                         Disconnect
                       </button>
