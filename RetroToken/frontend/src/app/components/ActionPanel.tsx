@@ -1,5 +1,5 @@
 // src/app/components/ActionPanel.tsx
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 
 type ActionPanelProps = {
   action: 'mint' | 'burn' | 'transfer';
@@ -22,6 +22,10 @@ export default function ActionPanel({
   executeAction,
   isPending
 }: ActionPanelProps) {
+  // Add state to track input focus
+  const [isAmountFocused, setIsAmountFocused] = useState<boolean>(false);
+  const [isRecipientFocused, setIsRecipientFocused] = useState<boolean>(false);
+  
   // Handle amount input to ensure it's a valid number
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -71,27 +75,52 @@ export default function ActionPanel({
       <div className="mb-4">
         <label className="block mb-2 text-retroYellow">AMOUNT</label>
         <div className="relative">
-          <span className="retro-cursor absolute left-4 top-1/2 transform -translate-y-1/2 z-10"></span>
           <input
             type="text"
-            className="retro-input pl-8" /* Added left padding to make room for cursor */
+            className="retro-input pl-8 w-full"
             value={amount}
             onChange={handleAmountChange}
             placeholder="Enter amount"
+            onFocus={() => setIsAmountFocused(true)}
+            onBlur={() => setIsAmountFocused(false)}
           />
+          
+          {/* Only show cursor */}
+          {isAmountFocused && (
+            <span 
+              className="retro-cursor absolute top-1/2 transform -translate-y-1/2 z-10"
+              style={{ 
+                left: `calc(2rem + ${amount.length * 0.65}ch)`, // Approximate character width
+              }}
+            ></span>
+          )}
         </div>
       </div>
       
       {action === 'transfer' && (
         <div className="mb-4">
           <label className="block mb-2 text-retroYellow">RECIPIENT ADDRESS</label>
-          <input
-            type="text"
-            className="retro-input"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-            placeholder="0x..."
-          />
+          <div className="relative">
+            <input
+              type="text"
+              className="retro-input pl-8 w-full"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              placeholder="0x..."
+              onFocus={() => setIsRecipientFocused(true)}
+              onBlur={() => setIsRecipientFocused(false)}
+            />
+            
+            {/* Only show cursor */}
+            {isRecipientFocused && (
+              <span 
+                className="retro-cursor absolute top-1/2 transform -translate-y-1/2 z-10"
+                style={{ 
+                  left: `calc(2rem + ${recipient.length * 0.6}ch)`, // Approximate character width
+                }}
+              ></span>
+            )}
+          </div>
         </div>
       )}
       
