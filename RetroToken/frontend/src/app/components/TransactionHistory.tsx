@@ -16,7 +16,6 @@ export default function TransactionHistory({
         {transactions.length === 0 ? (
           <div className="flex items-center justify-center h-20">
             <p>No transactions yet</p>
-            {/* Removed the retro-cursor from here */}
           </div>
         ) : (
           <div>
@@ -30,7 +29,7 @@ export default function TransactionHistory({
                     <p>
                       {tx.type === 'mint' && `Minted ${tx.amount} RTK tokens`}
                       {tx.type === 'burn' && `Burned ${tx.amount} RTK tokens`}
-                      {tx.type === 'transfer' && `Transferred ${tx.amount} RTK tokens to ${tx.to?.substring(0, 6)}...${tx.to?.substring(tx.to.length - 4)}`}
+                      {tx.type === 'transfer' && tx.to && `Transferred ${tx.amount} RTK tokens to ${tx.to?.substring(0, 6)}...${tx.to?.substring(tx.to.length - 4)}`}
                     </p>
                   </div>
                   <div className="text-sm">
@@ -49,7 +48,6 @@ export default function TransactionHistory({
                 </div>
               </div>
             ))}
-            {/* Removed the retro-cursor from here */}
           </div>
         )}
       </div>
