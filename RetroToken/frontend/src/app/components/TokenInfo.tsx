@@ -3,32 +3,59 @@
 import { useReadContract } from 'wagmi';
 import { formatEther } from 'viem';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../utils/contract';
+import { useEffect } from 'react';
 
-export default function TokenInfo() {
+// Define props interface within the file
+type TokenInfoProps = {
+  shouldRefresh: boolean;
+  onRefreshComplete: () => void;
+};
+
+export default function TokenInfo({ 
+  shouldRefresh, 
+  onRefreshComplete 
+}: TokenInfoProps) {
+  
   // Read basic token info
-  const { data: name } = useReadContract({
+  const { data: name, refetch: refetchName } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'name',
   });
 
-  const { data: symbol } = useReadContract({
+  const { data: symbol, refetch: refetchSymbol } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'symbol',
   });
 
-  const { data: totalSupply } = useReadContract({
+  const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'totalSupply',
   });
 
-  const { data: decimals } = useReadContract({
+  const { data: decimals, refetch: refetchDecimals } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'decimals',
   });
+
+  // Refresh all data when shouldRefresh changes to true
+  useEffect(() => {
+    if (shouldRefresh) {
+      console.log('Refreshing TokenInfo data');
+      Promise.all([
+        refetchName(),
+        refetchSymbol(),
+        refetchTotalSupply(),
+        refetchDecimals()
+      ]).then(() => {
+        console.log('TokenInfo refresh complete');
+        onRefreshComplete();
+      });
+    }
+  }, [shouldRefresh, refetchName, refetchSymbol, refetchTotalSupply, refetchDecimals, onRefreshComplete]);
 
   return (
     <div className="retro-terminal h-full">

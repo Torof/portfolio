@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { CONTRACT_ADDRESS, CONTRACT_ABI, Transaction, getExplorerUrl } from './utils/contract';
 import TokenBalance from './components/TokenBalance';
@@ -26,6 +26,12 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 }
 
 export default function Home() {
+  const [shouldRefreshInfo, setShouldRefreshInfo] = useState(false);
+  
+  const handleInfoRefreshComplete = () => {
+    setShouldRefreshInfo(false);
+  };
+  
   return (
     <>
       <Navbar />
@@ -34,7 +40,11 @@ export default function Home() {
         {/* Sidebar at extreme left */}
         <div className="w-full md:w-1/5 px-4 md:pl-8 py-8">
           <ClientOnly>
-            <TokenInfo />
+            {/* Pass props directly, don't use type from import */}
+            <TokenInfo 
+              shouldRefresh={shouldRefreshInfo} 
+              onRefreshComplete={handleInfoRefreshComplete} 
+            />
           </ClientOnly>
         </div>
         
@@ -44,7 +54,9 @@ export default function Home() {
             <h1 className="text-center text-2xl mb-6 text-retroYellow">RetroToken Terminal</h1>
             
             <ClientOnly>
-              <AppContent />
+              <AppContent 
+                setShouldRefreshInfo={setShouldRefreshInfo} 
+              />
             </ClientOnly>
           </div>
         </div>
@@ -53,15 +65,21 @@ export default function Home() {
   );
 }
 
+// Props for AppContent to allow refreshing TokenInfo
+type AppContentProps = {
+  setShouldRefreshInfo: (value: boolean) => void;
+};
 
-// Move all web3 dependent code to a separate component
-function AppContent() {
+// Main content component with all web3 dependent code
+function AppContent({ setShouldRefreshInfo }: AppContentProps) {
   const { address, isConnected } = useAccount();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [action, setAction] = useState<'mint' | 'burn' | 'transfer'>('mint');
   const [amount, setAmount] = useState<string>('');
   const [recipient, setRecipient] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [latestTxHash, setLatestTxHash] = useState<`0x${string}` | undefined>(undefined);
 
   // Retrieve balance
   const { data: balance, refetch: refetchBalance } = useReadContract({
@@ -74,14 +92,69 @@ function AppContent() {
     }
   });
 
+  // Wait for transaction receipt - only if we have a hash
+  const waitForTxResult = useWaitForTransactionReceipt(
+    latestTxHash ? { hash: latestTxHash } : { hash: undefined as any }
+  );
+
+  const isConfirming = latestTxHash ? waitForTxResult.isLoading : false;
+  const isConfirmed = latestTxHash ? waitForTxResult.isSuccess : false;
+
+  // Effect to handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && !isConfirming && latestTxHash) {
+      console.log('Transaction confirmed, refreshing data');
+      
+      // Clear the transaction hash after handling
+      setLatestTxHash(undefined);
+      
+      // Refetch balance immediately and again after a short delay
+      refetchBalance();
+      
+      // Set flag to refresh token info
+      setShouldRefreshInfo(true);
+      
+      // After a delay, refetch balance and transaction history
+      setTimeout(() => {
+        refetchBalance();
+        fetchTransactionHistory();
+      }, 5000); // 5 seconds should be enough for the blockchain state to update
+    }
+  }, [isConfirmed, isConfirming, latestTxHash, refetchBalance, setShouldRefreshInfo]);
+
   // Write contract
   const { writeContractAsync, isPending } = useWriteContract();
 
-  // When address changes, reset error and refetch balance
+  // Fetch transaction history from subgraph
+  const fetchTransactionHistory = async () => {
+    if (!address) return;
+    
+    setIsLoadingHistory(true);
+    try {
+      // Import the fetchUserTransactions function
+      const { fetchUserTransactions } = await import('./utils/subgraphClient');
+      const subgraphTxs = await fetchUserTransactions(address);
+      
+      // Use only the subgraph transactions for complete history
+      setTransactions(subgraphTxs);
+    } catch (error) {
+      console.error("Error fetching transactions from subgraph:", error);
+      // Show error message
+      setError("Failed to load transaction history. Please try again later.");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // When address changes, reset error, refetch balance, and fetch transaction history
   useEffect(() => {
     if (isConnected && address) {
       setError(null);
       refetchBalance();
+      fetchTransactionHistory();
+    } else {
+      // Clear transactions when wallet disconnects
+      setTransactions([]);
     }
   }, [isConnected, address, refetchBalance]);
 
@@ -124,27 +197,13 @@ function AppContent() {
         });
       }
 
-      // Wait for transaction confirmation
+      // Store transaction hash to wait for confirmation
       if (hash) {
-        // Add transaction to history
-        const newTransaction: Transaction = {
-          type: action,
-          amount,
-          hash,
-          timestamp: Date.now(),
-          ...(action === 'transfer' && { to: recipient })
-        };
-
-        setTransactions(prev => [newTransaction, ...prev]);
+        setLatestTxHash(hash);
         
         // Reset form
         setAmount('');
         if (action === 'transfer') setRecipient('');
-        
-        // Refetch balance after transaction
-        setTimeout(() => {
-          refetchBalance();
-        }, 2000); // Give the blockchain a moment to update
       }
     } catch (error) {
       console.error("Transaction error:", error);
@@ -172,13 +231,44 @@ function AppContent() {
             recipient={recipient}
             setRecipient={setRecipient}
             executeAction={executeAction}
-            isPending={isPending}
+            isPending={isPending || isConfirming}
           />
           
-          <TransactionHistory 
-            transactions={transactions} 
-            getExplorerUrl={getExplorerUrl}
-          />
+          {isLoadingHistory ? (
+            <div className="retro-terminal mb-6">
+              <h2 className="text-xl mb-2 text-retroPink">TRANSACTION HISTORY</h2>
+              <div className="retro-text-box flex items-center justify-center h-20">
+                <p>Loading transaction history...</p>
+              </div>
+            </div>
+          ) : transactions.length > 0 ? (
+            <TransactionHistory 
+              transactions={transactions} 
+              getExplorerUrl={getExplorerUrl}
+            />
+          ) : (
+            <div className="retro-terminal mb-6">
+              <h2 className="text-xl mb-2 text-retroPink">TRANSACTION HISTORY</h2>
+              <div className="retro-text-box flex items-center justify-center h-20">
+                <p>No transactions found for this address. Transactions may take a few minutes to appear after they are made.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Add refresh button */}
+          <div className="text-center mt-2 mb-6">
+            <button 
+              onClick={() => {
+                fetchTransactionHistory();
+                refetchBalance();
+                setShouldRefreshInfo(true);
+              }}
+              className="text-retroBlue hover:text-retroPink text-sm"
+              disabled={isLoadingHistory}
+            >
+              {isLoadingHistory ? 'Refreshing...' : 'Refresh all data'}
+            </button>
+          </div>
         </>
       ) : (
         <div className="retro-terminal mb-6">
