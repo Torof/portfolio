@@ -1,0 +1,3 @@
+[submodule "town_builder/contracts/lib/forge-std"]
+	path = town_builder/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
