@@ -7,53 +7,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title TownNFT
  * @dev ERC-721 contract representing ownership of towns in the Town Builder game
- * Implements one-town-per-address restriction and basic town level
+ * Implements one-town-per-address restriction
  */
 contract TownNFT is ERC721Enumerable, Ownable {
     // Custom errors
     error AlreadyOwnsTown();
     error InvalidAddress();
-    error OnlyTownManager();
     error TownDoesNotExist();
-    error TownAtMaxLevel();
     error RecipientAlreadyOwnsTown();
-    
-    // Only tracking town level
-    mapping(uint256 => uint8) public townLevels;
-    
-    // Max level for towns
-    uint8 public constant MAX_TOWN_LEVEL = 5;
-    
-    // Address of the TownManager contract
-    address public townManager;
     
     // Events
     event TownCreated(uint256 indexed tokenId, address owner);
-    event TownLevelUp(uint256 indexed tokenId, uint8 newLevel);
-    event TownManagerSet(address townManager);
     
     /**
      * @dev Constructor
      */
     constructor() ERC721("Town Builder", "TOWN") Ownable(msg.sender) {}
-    
-    /**
-     * @dev Set the address of the TownManager contract
-     * @param _townManager The address of the TownManager
-     */
-    function setTownManager(address _townManager) external onlyOwner {
-        require(_townManager != address(0), InvalidAddress());
-        townManager = _townManager;
-        emit TownManagerSet(_townManager);
-    }
-    
-    /**
-     * @dev Modifier to check if caller is the TownManager
-     */
-    modifier onlyTownManager() {
-        require(msg.sender == townManager, OnlyTownManager());
-        _;
-    }
     
     /**
      * @dev Creates a new town for the caller
@@ -64,9 +33,6 @@ contract TownNFT is ERC721Enumerable, Ownable {
         
         uint256 tokenId = totalSupply() + 1;
         _safeMint(msg.sender, tokenId);
-        
-        // Initialize town at level 1
-        townLevels[tokenId] = 1;
         
         emit TownCreated(tokenId, msg.sender);
         return tokenId;
@@ -82,20 +48,6 @@ contract TownNFT is ERC721Enumerable, Ownable {
         }
         
         return super._update(to, tokenId, auth);
-    }
-    
-    /**
-     * @dev Increases the level of a town - can only be called by TownManager
-     * @param tokenId The ID of the town to upgrade
-     */
-    function upgradeTownLevel(uint256 tokenId) external onlyTownManager {
-        require(_exists(tokenId), TownDoesNotExist());
-        require(townLevels[tokenId] < MAX_TOWN_LEVEL, TownAtMaxLevel());
-        
-        // Increase level
-        townLevels[tokenId] += 1;
-        
-        emit TownLevelUp(tokenId, townLevels[tokenId]);
     }
     
     /**
